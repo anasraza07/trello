@@ -1,9 +1,10 @@
 import { BsThreeDots } from 'react-icons/bs'
 import { RiCollapseHorizontalLine } from 'react-icons/ri'
 import { List } from '../page'
-import { IoMdAdd, IoMdClose } from 'react-icons/io'
 import { SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
+import { Draggable, Droppable } from '@hello-pangea/dnd'
+import ItemCard from './ItemCard'
 
 interface Props {
     list: List,
@@ -12,9 +13,10 @@ interface Props {
     setCardTitle: React.Dispatch<SetStateAction<string>>
     addCard: () => void,
     cardTitle: string,
+    index: number
 }
 
-const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle }) => {
+const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle, index }) => {
     const [isCollapse, setIsCollapse] = useState<boolean>(false);
 
     const toggleCollapse = () => {
@@ -22,34 +24,47 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
     }
 
     return (
-        <div className={`list-card rounded-[10px] bg-amber-200 ${!isCollapse && "w-68 py-2 px-3"} overflow-hidden`}>
-            {isCollapse ? (
-                <div onClick={toggleCollapse} className='flex flex-col items-center hover:bg-amber-300/30 py-3 px-3 cursor-pointer'>
-                    <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
-                    <span className="list-name text-[15px] font-semibold [writing-mode:vertical-lr] mb-2">{list.name}</span>
-                    <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.card.length}</span>
-                </div>
-            ) : (
-                <>
-                    <div className="top-bar flex justify-between p-2 mb-1">
-                        <span className="list-name text-sm font-semibold">{list.name}</span>
-                        <div className="actions flex items-center gap-3">
-                            <span className="cursor-pointer"
-                                onClick={toggleCollapse}><RiCollapseHorizontalLine size={18} /></span>
-                            <span className="cursor-pointer"><BsThreeDots /></span>
+        <Draggable draggableId={list.id.toString()} index={index}>
+            {(provided) => (
+                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-amber-200 ${!isCollapse && "w-68 py-2 px-3"}`}>
+                    {isCollapse ? (
+                        <div onClick={toggleCollapse} className='flex flex-col items-center hover:bg-amber-300/30 py-3 px-3 cursor-pointer'>
+                            <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
+                            <span className="list-name text-[15px] font-semibold [writing-mode:vertical-lr] mb-2">{list.name}</span>
+                            <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.card.length}</span>
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="top-bar flex justify-between p-2 mb-1">
+                                <span className="list-name text-sm font-semibold">{list.name}</span>
+                                <div className="actions flex items-center gap-3">
+                                    <span className="cursor-pointer"
+                                        onClick={toggleCollapse}><RiCollapseHorizontalLine size={18} /></span>
+                                    <span className="cursor-pointer"><BsThreeDots /></span>
+                                </div>
+                            </div>
 
-                    <ul className="">
-                        {list.card.map(item => (
-                            <li key={item.id} className="bg-white p-2 text-gray-600 rounded-lg shadow-md mb-2 wrap-break-word">{item.name}</li>
-                        ))}
-                    </ul>
+                            {/* item cards */}
+                            <Droppable droppableId={list.id.toString()}
+                                direction='vertical' type='CHILD'>
+                                {(provided) => (
+                                    <ul className="cards min-h-0.5 flex flex-col" ref={provided.innerRef}
+                                        {...provided.droppableProps}>
+                                        {list.card.map((item, index) => (
+                                            <ItemCard key={item.id} item={item}
+                                                index={index} />
+                                        ))}
+                                        {provided.placeholder}
+                                    </ul>
+                                )}
+                            </Droppable>
 
-                    <CardInputField list={list} listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle} setCardTitle={setCardTitle} />
-                </>
+                            <CardInputField list={list} listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle} setCardTitle={setCardTitle} />
+                        </>
+                    )}
+                </div>
             )}
-        </div>
+        </Draggable>
     )
 }
 

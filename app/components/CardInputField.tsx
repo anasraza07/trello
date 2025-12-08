@@ -1,6 +1,6 @@
 import { IoMdAdd, IoMdClose } from "react-icons/io"
 import { List } from "../page"
-import { SetStateAction } from "react"
+import { SetStateAction, useEffect, useRef } from "react"
 
 interface Props {
     list: List,
@@ -12,6 +12,14 @@ interface Props {
 }
 
 const CardInputField: React.FC<Props> = ({ list, listId, addCard, cardTitle, setCardTitle, setListId }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    }, [listId])
+
     const closeCardInputField = () => {
         setListId(0);
         setCardTitle("");
@@ -26,7 +34,7 @@ const CardInputField: React.FC<Props> = ({ list, listId, addCard, cardTitle, set
                 </div>
             ) : (
                 <>
-                    <textarea className="w-full bg-white p-2 rounded-md outline-none ring-2 ring-blue-500 hover:ring-0 placeholder:text-sm placeholder:text-gray-500 field-sizing-content min-h-14 max-h-40 shadow-md resize-none mb-1" placeholder="Enter a title" value={cardTitle} onChange={(e) => setCardTitle(e.target.value)}></textarea>
+                    <textarea ref={textareaRef} className="w-full bg-white p-2 rounded-md outline-none ring-2 ring-blue-500 hover:ring-0 placeholder:text-sm placeholder:text-gray-500 field-sizing-content min-h-14 max-h-40 shadow-md resize-none mb-1" placeholder="Enter a title" value={cardTitle} onChange={(e) => setCardTitle(e.target.value)}></textarea>
                     <div className="space-x-1 flex items-center">
                         <button className="font-semibold text-sm bg-blue-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none" onClick={addCard}>Add card</button>
                         <button className="py-1.5 px-1.5 hover:bg-neutral-400/40 rounded-sm cursor-pointer text-gray-900"
