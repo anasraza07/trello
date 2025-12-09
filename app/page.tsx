@@ -61,6 +61,7 @@ const Home = () => {
 
   const addCard = () => {
     if (!cardTitle.trim()) return;
+
     setLists(prevLists =>
       prevLists.map(list =>
         listId == list.id ? {
@@ -83,52 +84,55 @@ const Home = () => {
     const { destination, source, draggableId } = result
     if (!destination) return;
     if (destination.droppableId == source.droppableId
-      && destination.index == source.index) return;
+      && destination.index == source.index) {
+      console.log(result);
+      return
+    };
 
     if (result.type == "PARENT") {
+      console.log(result)
       setLists(prevLists => {
         const newArray = [...prevLists];
         if (destination.index != source.index) {
+          const [removedItem] = newArray.splice(source.index, 1);
+          newArray.splice(destination.index, 0, removedItem);
+        }
+        return newArray;
+      })
+    }
+
+    if (result.type == "CHILD") {
+      console.log(result)
+      setLists(prevLists => {
+        let newArray = [...prevLists];
+        if (destination.droppableId == source.droppableId) {
           newArray.forEach(list => {
-            if (list.id.toString() == draggableId) {
-              const [removedItem] = newArray.splice(source.index, 1);
-              newArray.splice(destination.index, 0, removedItem);
+            if (list.id.toString() == source.droppableId) {
+              const [removedItem] = list.card.splice(source.index, 1);
+              list.card.splice(destination.index, 0, removedItem);
+            }
+          })
+        } else {
+          let movedItem: Card;
+          newArray.forEach(list => {
+            if (list.id.toString() == source.droppableId) {
+              [movedItem] = list.card.splice(source.index, 1);
+            }
+          })
+          newArray.forEach(list => {
+            if (list.id.toString() == destination.droppableId) {
+              list.card.splice(destination.index, 0, movedItem);
             }
           })
         }
         return newArray;
       })
     }
-
-    setLists(prevLists => {
-      let newArray = [...prevLists];
-      if (destination.droppableId == source.droppableId) {
-        newArray.forEach(list => {
-          if (list.id.toString() == source.droppableId) {
-            const [removedItem] = list.card.splice(source.index, 1);
-            list.card.splice(destination.index, 0, removedItem);
-          }
-        })
-      } else {
-        let movedItem: Card;
-        newArray.forEach(list => {
-          if (list.id.toString() == source.droppableId) {
-            [movedItem] = list.card.splice(source.index, 1);
-          }
-        })
-        newArray.forEach(list => {
-          if (list.id.toString() == destination.droppableId) {
-            list.card.splice(destination.index, 0, movedItem);
-          }
-        })
-      }
-      return newArray;
-    })
   }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="min-h-screen bg-linear-to-tl from-pink-300 to-purple-500">
+      <div className="min-h-screen bg-linear-to-tl from-pink-300 to-purple-500 text-black">
 
         <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center  items-center cursor-pointer text-white" onClick={() => setIsModalOpen(true)}>
           +
@@ -157,7 +161,7 @@ const Home = () => {
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
           {(provided) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start gap-4 min-h-[calc(100vh-120px)] overflow-x-scroll scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-120px)] overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4">
 
               {/* list card */}
               {lists.map((list, index) =>
