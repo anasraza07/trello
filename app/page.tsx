@@ -3,16 +3,19 @@ import { MouseEvent, useEffect, useRef, useState } from "react";
 import ListInputField from "./components/ListInputField";
 import ListCard from "./components/ListCard";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { supabase } from "./supabase-client";
 
 export interface List {
   id: number,
+  created_at: string,
   name: string,
-  card: Card[],
+  cards: Card[],
 }
 
 export interface Card {
   id: number,
-  name: string
+  name: string,
+  list_id: number,
 }
 
 const Home = () => {
@@ -21,7 +24,7 @@ const Home = () => {
   const [listId, setListId] = useState(0);
   const [cardTitle, setCardTitle] = useState("");
   const [globalCardTitle, setGlobalCardTitle] = useState("");
-  const [selectedList, setSelectedList] = useState("select-your-list");
+  const [selectedList, setSelectedList] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const modelRef = useRef(null);
@@ -31,46 +34,98 @@ const Home = () => {
     if (globalCardInputRef.current) {
       globalCardInputRef.current.focus();
     }
+
+    fetchData();
   }, [])
 
-  const addList = () => {
+  const fetchData = async () => {
+    let { data, error } = await supabase
+      .from('lists')
+      .select('*, cards(*)')
+
+    if (error || !data) {
+      console.error(error);
+      return;
+    }
+
+    setLists(data);
+  }
+
+  const addList = async () => {
     if (!listName.trim() || lists.map(list =>
       list.name.toLowerCase().replaceAll(" ", ""))
-      .includes(listName.toLowerCase().replaceAll(" ", ""))) return;
+      .includes(listName.toLowerCase().replaceAll(" ", ""))) {
+      console.log("same list")
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('lists').insert([
+        { name: listName },
+      ]).select('*, cards(*)')
+
+    if (error) {
+      console.error(error)
+      return;
+    }
 
     setLists(prevLists =>
-      [...prevLists, { id: Date.now(), name: listName, card: [] }])
+      [...prevLists, data[0]])
+
     setListName("");
     setIsModalOpen(false)
   }
 
-  const addCardGlobally = () => {
-    if (!globalCardTitle || selectedList == "select-your-list") return;
-    console.log(selectedList)
+  const addCardGlobally = async () => {
+    if (!globalCardTitle || !selectedList) {
+      console.log(selectedList);
+      return;
+    };
+
+    const cardList = lists.find(list => list.name == selectedList);
+    const { data, error } = await supabase
+      .from('cards')
+      .insert([
+        { name: globalCardTitle, list_id: cardList?.id },
+      ]).select()
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     setLists(prevLists =>
       prevLists.map(list =>
         list.name == selectedList ? {
-          ...list, card: [...list.card, {
-            id: Date.now(), name: globalCardTitle
-          }]
+          ...list, cards: [...list.cards, data[0]]
         } : list
       )
     )
     setGlobalCardTitle("")
   }
 
-  const addCard = () => {
+  const addCard = async () => {
     if (!cardTitle.trim()) return;
+
+    const { data, error } = await supabase
+      .from('cards')
+      .insert([
+        { name: cardTitle, list_id: listId },
+      ]).select()
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     setLists(prevLists =>
       prevLists.map(list =>
         listId == list.id ? {
-          ...list, card: [...list.card, {
-            id: Date.now(), name: cardTitle
-          }]
+          ...list, cards: [...list.cards, data[0]]
         } : list
       )
     )
+
     setCardTitle("")
   }
 
@@ -108,20 +163,20 @@ const Home = () => {
         if (destination.droppableId == source.droppableId) {
           newArray.forEach(list => {
             if (list.id.toString() == source.droppableId) {
-              const [removedItem] = list.card.splice(source.index, 1);
-              list.card.splice(destination.index, 0, removedItem);
+              const [removedItem] = list.cards.splice(source.index, 1);
+              list.cards.splice(destination.index, 0, removedItem);
             }
           })
         } else {
           let movedItem: Card;
           newArray.forEach(list => {
             if (list.id.toString() == source.droppableId) {
-              [movedItem] = list.card.splice(source.index, 1);
+              [movedItem] = list.cards.splice(source.index, 1);
             }
           })
           newArray.forEach(list => {
             if (list.id.toString() == destination.droppableId) {
-              list.card.splice(destination.index, 0, movedItem);
+              list.cards.splice(destination.index, 0, movedItem);
             }
           })
         }
@@ -134,7 +189,8 @@ const Home = () => {
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="min-h-screen bg-linear-to-tl from-pink-300 to-purple-500 text-black">
 
-        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center  items-center cursor-pointer text-white" onClick={() => setIsModalOpen(true)}>
+        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center  items-center cursor-pointer text-white"
+          onClick={() => setIsModalOpen(true)}>
           +
         </button>
 
@@ -145,11 +201,12 @@ const Home = () => {
 
         {/* global card input */}
         <div className="input-container max-w-4xl mx-auto flex items-center gap-4 mb-12 pt-8">
-          <input ref={globalCardInputRef} type="text" placeholder="Enter card title..." className="flex-1 bg-white ring-1 ring-blue-600 py-2 pl-3 rounded-md outline-none focus:ring-2" value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} />
+          <input ref={globalCardInputRef} type="text" placeholder="Enter card title..." className="flex-1 bg-white ring-1 ring-blue-600 py-2 pl-3 rounded-md outline-none focus:ring-2"
+            value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} />
 
           {/* select list */}
           <select name="" id="" className="outline-none cursor-pointer [appearance:base-select] bg-white ring-1 focus:ring-2 ring-blue-600 py-2 px-3 rounded-md min-w-40 text-gray-700" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
-            <option value="select-your-list">Select your list</option>
+            <option value="" disabled>Select your list</option>
             {lists.map(list => <option key={list.id} value={list.name}>
               {list.name}</option>)}
           </select>
@@ -178,4 +235,4 @@ const Home = () => {
   )
 }
 
-export default Home
+export default Home;

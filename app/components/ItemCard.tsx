@@ -14,7 +14,7 @@ const ItemCard: React.FC<Props> = ({ item: { id, name }, index }) => {
 					{...provided.draggableProps}
 					{...provided.dragHandleProps}
 					ref={provided.innerRef}
-					className="bg-white p-2 text-gray-600 rounded-lg shadow-md wrap-break-word">{name}</li>
+					className="bg-white p-2 mb-2 text-gray-600 rounded-lg shadow-md wrap-break-word">{name}</li>
 			)}
 		</Draggable>
 	)

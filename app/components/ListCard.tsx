@@ -31,7 +31,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
             <div onClick={toggleCollapse} className='flex flex-col rounded-[10px] items-center hover:bg-amber-300/30 py-3 px-3 cursor-pointer'>
               <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
               <span className="list-name text-[15px] font-semibold [writing-mode:vertical-lr] mb-2">{list.name}</span>
-              <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.card.length}</span>
+              <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.cards.length}</span>
             </div>
           ) : (
             <>
@@ -49,10 +49,10 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
                 direction='vertical' type='CHILD'>
                 {(provided) => (
                   <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 
-                  max-h-[380px] p-2 space-y-2"
+                  max-h-[380px] p-2"
                     ref={provided.innerRef}
                     {...provided.droppableProps}>
-                    {list.card.map((item, index) => (
+                    {list.cards.map((item, index) => (
                       <ItemCard key={item.id}
                         item={item}
                         index={index} />
