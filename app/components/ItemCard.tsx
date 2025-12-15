@@ -8,7 +8,8 @@ interface Props {
 
 const ItemCard: React.FC<Props> = ({ item: { id, name }, index }) => {
 	return (
-		<Draggable draggableId={id.toString()} index={index}>
+		<Draggable draggableId={id.toString()} index={index}
+			key={id.toString()}>
 			{(provided) => (
 				<li key={id}
 					{...provided.draggableProps}

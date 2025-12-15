@@ -10,12 +10,14 @@ export interface List {
   created_at: string,
   name: string,
   cards: Card[],
+  index: number;
 }
 
 export interface Card {
   id: number,
   name: string,
   list_id: number,
+  index: number;
 }
 
 const Home = () => {
@@ -61,7 +63,7 @@ const Home = () => {
 
     const { data, error } = await supabase
       .from('lists').insert([
-        { name: listName },
+        { name: listName, index: lists.length },
       ]).select('*, cards(*)')
 
     if (error) {
@@ -69,8 +71,7 @@ const Home = () => {
       return;
     }
 
-    setLists(prevLists =>
-      [...prevLists, data[0]])
+    setLists(prevLists => [...prevLists, data[0]]);
 
     setListName("");
     setIsModalOpen(false)
@@ -83,10 +84,14 @@ const Home = () => {
     };
 
     const cardList = lists.find(list => list.name == selectedList);
+
     const { data, error } = await supabase
       .from('cards')
       .insert([
-        { name: globalCardTitle, list_id: cardList?.id },
+        {
+          name: globalCardTitle, list_id: cardList?.id,
+          index: cardList?.cards.length
+        },
       ]).select()
 
     if (error) {
@@ -107,16 +112,21 @@ const Home = () => {
   const addCard = async () => {
     if (!cardTitle.trim()) return;
 
+    const cardList = lists.find(list => list.id == listId);
     const { data, error } = await supabase
       .from('cards')
       .insert([
-        { name: cardTitle, list_id: listId },
+        {
+          name: cardTitle, list_id: listId,
+          index: cardList?.cards.length
+        },
       ]).select()
 
     if (error) {
       console.error(error);
       return;
     }
+    console.log(data)
 
     setLists(prevLists =>
       prevLists.map(list =>
@@ -125,7 +135,6 @@ const Home = () => {
         } : list
       )
     )
-
     setCardTitle("")
   }
 
@@ -135,17 +144,16 @@ const Home = () => {
     }
   }
 
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
     if (!destination) return;
     if (destination.droppableId == source.droppableId
       && destination.index == source.index) {
-      console.log(result);
-      return
-    };
+      return;
+    }
 
     if (result.type == "PARENT") {
-      console.log(result)
       setLists(prevLists => {
         const newArray = [...prevLists];
         if (destination.index != source.index) {
@@ -154,35 +162,73 @@ const Home = () => {
         }
         return newArray;
       })
+
+      await supabase.from("lists")
+        .update({ "index": destination.index })
+        .eq("id", draggableId)
+
+      
+
+    } else if (result.type == "CHILD") {
+      if (source.droppableId == destination.droppableId) {
+        setLists(prevLists => {
+          const myListId = Number(source.droppableId.slice(3));
+
+          return prevLists.map(list => {
+            if (list.id != myListId) return list;
+
+            const newCards = [...list.cards];
+            const [movedItem] = newCards.splice(source.index, 1);
+            newCards.splice(destination.index, 0, movedItem);
+
+            return { ...list, cards: newCards };
+          })
+        })
+      } else {
+        const sourceListId = Number(source.droppableId.slice(3));
+        const destinationListId = Number(
+          destination.droppableId.slice(3)
+        );
+
+        setLists(prevLists => {
+          let movedCard: Card;
+
+          return prevLists.map(list => {
+            if (list.id == sourceListId) {
+              const newCards = [...list.cards];
+              [movedCard] = newCards.splice(source.index, 1);
+
+              return { ...list, cards: newCards }
+            }
+
+            if (list.id == destinationListId) {
+              const newCards = [...list.cards];
+              newCards.splice(destination.index, 0, movedCard);
+
+              return { ...list, cards: newCards }
+
+            }
+
+
+            return list;
+          })
+
+        })
+
+        const { data, error } = await supabase
+          .from('lists')
+          .update(lists).select("*, cards(*)");
+
+        if (error) {
+          console.error("ERROR updating cards:", error);
+          return;
+        }
+
+        console.log(data)
+      }
     }
 
-    if (result.type == "CHILD") {
-      console.log(result)
-      setLists(prevLists => {
-        let newArray = [...prevLists];
-        if (destination.droppableId == source.droppableId) {
-          newArray.forEach(list => {
-            if (list.id.toString() == source.droppableId) {
-              const [removedItem] = list.cards.splice(source.index, 1);
-              list.cards.splice(destination.index, 0, removedItem);
-            }
-          })
-        } else {
-          let movedItem: Card;
-          newArray.forEach(list => {
-            if (list.id.toString() == source.droppableId) {
-              [movedItem] = list.cards.splice(source.index, 1);
-            }
-          })
-          newArray.forEach(list => {
-            if (list.id.toString() == destination.droppableId) {
-              list.cards.splice(destination.index, 0, movedItem);
-            }
-          })
-        }
-        return newArray;
-      })
-    }
+
   }
 
   return (
@@ -202,7 +248,8 @@ const Home = () => {
         {/* global card input */}
         <div className="input-container max-w-4xl mx-auto flex items-center gap-4 mb-12 pt-8">
           <input ref={globalCardInputRef} type="text" placeholder="Enter card title..." className="flex-1 bg-white ring-1 ring-blue-600 py-2 pl-3 rounded-md outline-none focus:ring-2"
-            value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} />
+            value={globalCardTitle}
+            onChange={(e) => setGlobalCardTitle(e.target.value)} />
 
           {/* select list */}
           <select name="" id="" className="outline-none cursor-pointer [appearance:base-select] bg-white ring-1 focus:ring-2 ring-blue-600 py-2 px-3 rounded-md min-w-40 text-gray-700" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
@@ -218,14 +265,13 @@ const Home = () => {
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
           {(provided) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-120px)] overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-120px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
 
               {/* list card */}
               {lists.map((list, index) =>
                 <ListCard key={list.id} list={list}
                   listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle}
                   setCardTitle={setCardTitle} index={index} />)}
-
               {provided.placeholder}
             </div>
           )}

@@ -26,7 +26,8 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
   return (
     <Draggable draggableId={list.id.toString()} index={index}>
       {(provided) => (
-        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-amber-200 mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
+        <div ref={provided.innerRef} {...provided.draggableProps} 
+        {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-amber-200 mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
           {isCollapse ? (
             <div onClick={toggleCollapse} className='flex flex-col rounded-[10px] items-center hover:bg-amber-300/30 py-3 px-3 cursor-pointer'>
               <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
@@ -45,11 +46,10 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               </div>
 
               {/* item cards */}
-              <Droppable droppableId={list.id.toString()}
+              <Droppable droppableId={`ul-${list.id.toString()}`}
                 direction='vertical' type='CHILD'>
                 {(provided) => (
-                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 
-                  max-h-[380px] p-2"
+                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-[380px] p-2"
                     ref={provided.innerRef}
                     {...provided.droppableProps}>
                     {list.cards.map((item, index) => (
