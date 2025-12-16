@@ -44,6 +44,8 @@ const Home = () => {
     let { data, error } = await supabase
       .from('lists')
       .select('*, cards(*)')
+      .order("index", { ascending: true })
+      .order("index", { referencedTable: "cards", ascending: true })
 
     if (error || !data) {
       console.error(error);
@@ -151,83 +153,97 @@ const Home = () => {
     if (destination.droppableId == source.droppableId
       && destination.index == source.index) {
       return;
-    }
 
-    if (result.type == "PARENT") {
-      setLists(prevLists => {
-        const newArray = [...prevLists];
-        if (destination.index != source.index) {
-          const [removedItem] = newArray.splice(source.index, 1);
-          newArray.splice(destination.index, 0, removedItem);
-        }
-        return newArray;
-      })
+    } else {
+      // lists logic
+      if (result.type == "PARENT") {
+        const newArray = [...lists];
+        const [removedItem] = newArray.splice(source.index, 1);
+        newArray.splice(destination.index, 0, removedItem);
+        setLists(newArray);
 
-      await supabase.from("lists")
-        .update({ "index": destination.index })
-        .eq("id", draggableId)
-
-      
-
-    } else if (result.type == "CHILD") {
-      if (source.droppableId == destination.droppableId) {
-        setLists(prevLists => {
+        await Promise.all(
+          newArray.map((list, index) =>
+            supabase.from("lists")
+              .update({ index: index })
+              .eq("id", list.id)
+          )
+        )
+        // cards logic
+      } else if (result.type == "CHILD") {
+        if (source.droppableId == destination.droppableId) {
           const myListId = Number(source.droppableId.slice(3));
 
-          return prevLists.map(list => {
+          let myCards: Card[] = [];
+          const updatedLists = lists.map(list => {
             if (list.id != myListId) return list;
 
-            const newCards = [...list.cards];
-            const [movedItem] = newCards.splice(source.index, 1);
-            newCards.splice(destination.index, 0, movedItem);
-
-            return { ...list, cards: newCards };
+            myCards = [...list.cards];
+            const [movedItem] = myCards.splice(source.index, 1);
+            myCards.splice(destination.index, 0, movedItem);
+            return { ...list, cards: myCards };
           })
-        })
-      } else {
-        const sourceListId = Number(source.droppableId.slice(3));
-        const destinationListId = Number(
-          destination.droppableId.slice(3)
-        );
 
-        setLists(prevLists => {
-          let movedCard: Card;
+          setLists(updatedLists)
+          await Promise.all(
+            myCards.map((card, index) =>
+              supabase.from("cards")
+                .update({ index: index })
+                .eq("id", card.id)
+            )
+          )
 
-          return prevLists.map(list => {
+        } else {
+
+          const sourceListId = Number(source.droppableId.slice(3));
+          const destinationListId = Number(
+            destination.droppableId.slice(3)
+          );
+
+          const sourceList = lists.find(l => l.id == sourceListId);
+          const movedCard = sourceList?.cards[source.index];
+          if (!movedCard) return
+
+          const updatedLists = lists.map(list => {
             if (list.id == sourceListId) {
-              const newCards = [...list.cards];
-              [movedCard] = newCards.splice(source.index, 1);
+              const cards = [...list.cards];
+              cards.splice(source.index, 1);
 
-              return { ...list, cards: newCards }
+              return { ...list, cards }
             }
 
             if (list.id == destinationListId) {
-              const newCards = [...list.cards];
-              newCards.splice(destination.index, 0, movedCard);
+              const cards = [...list.cards];
+              movedCard.list_id = destinationListId;
+              cards.splice(destination.index, 0, movedCard);
 
-              return { ...list, cards: newCards }
-
+              return { ...list, cards }
             }
-
 
             return list;
           })
 
-        })
+          const cards: Card[] = [];
+          updatedLists.forEach(list => {
+            list.cards.forEach(card => cards.unshift(card))
+          })
 
-        const { data, error } = await supabase
-          .from('lists')
-          .update(lists).select("*, cards(*)");
+          // console.log(updatedList)
+          // console.log(updatedLists)
+          setLists(updatedLists);
 
-        if (error) {
-          console.error("ERROR updating cards:", error);
-          return;
+          await Promise.all(
+            cards.map(card =>
+              supabase.from("cards")
+                .update({
+                  index: card.index,
+                  list_id: card.list_id
+                }).eq("id", card.id)
+            )
+          )
         }
-
-        console.log(data)
       }
     }
-
 
   }
 
@@ -235,7 +251,7 @@ const Home = () => {
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="min-h-screen bg-linear-to-tl from-pink-300 to-purple-500 text-black">
 
-        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center  items-center cursor-pointer text-white"
+        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center items-center cursor-pointer text-white"
           onClick={() => setIsModalOpen(true)}>
           +
         </button>
