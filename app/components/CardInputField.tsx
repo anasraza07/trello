@@ -1,5 +1,5 @@
 import { IoMdAdd, IoMdClose } from "react-icons/io"
-import { List } from "../page"
+import { List } from "../pages/Home";
 import { SetStateAction, useEffect, useRef } from "react"
 
 interface Props {

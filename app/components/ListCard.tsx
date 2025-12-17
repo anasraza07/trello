@@ -1,6 +1,6 @@
 import { BsThreeDots } from 'react-icons/bs'
 import { RiCollapseHorizontalLine } from 'react-icons/ri'
-import { List } from '../page'
+import { List } from '../pages/Home'
 import { SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
 import { Draggable, Droppable } from '@hello-pangea/dnd'
@@ -55,7 +55,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
                     {...provided.droppableProps}>
                     {list.cards.map((item, index) => (
                       <ItemCard key={item.id}
-                        item={item} 
+                        item={item}
                         index={index} />
                     ))}
                     {provided.placeholder}
