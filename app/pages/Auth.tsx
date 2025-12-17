@@ -1,6 +1,7 @@
 "use client";
 import { FormEvent, useState } from "react";
 import { supabase } from "../supabase-client";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -8,22 +9,33 @@ const Auth = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!authForm.email.trim() || !authForm.password.trim()) return;
+    if (!authForm.email.trim() || !authForm.password.trim()) {
+      toast.error("Please fill all the fields!")
+      return;
+    }
 
     if (isSignUp) {
       const { error } = await supabase.auth.signUp(authForm);
       if (error) {
         console.error("Error signing up user:", error)
+        toast.error(error.message);
         return;
       }
+      toast.info("Please check your inbox and verify your email address.")
     } else {
       const { error } = await supabase.auth.signInWithPassword(authForm);
       if (error) {
-        console.error("Error signing in user:", error)
+        console.error("Error signing in user:", error);
+        toast.error(error.message);
         return;
       }
     }
 
+    setAuthForm({ email: "", password: "" })
+  }
+
+  const switchFormState = () => {
+    setIsSignUp(!isSignUp);
     setAuthForm({ email: "", password: "" })
   }
 
@@ -35,7 +47,7 @@ const Auth = () => {
       <input className="bg-white border-none outline-none ring-1 focus:ring-2 ring-blue-500 pl-2 py-1 rounded-sm" type="password" placeholder="Enter password" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} />
       <button className="font-semibold bg-blue-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none w-fit mx-auto">
         {isSignUp ? "Sign Up" : "Login"}</button>
-      <button type="button" className="font-semibold bg-green-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none w-fit mx-auto" value={authForm.password} onClick={() => setIsSignUp(!isSignUp)}>Switch to {isSignUp ? "Login" : "Sign Up"}</button>
+      <button type="button" className="font-semibold bg-green-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none w-fit mx-auto" value={authForm.password} onClick={switchFormState}>Switch to {isSignUp ? "Login" : "Sign Up"}</button>
     </form>
   )
 }

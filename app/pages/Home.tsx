@@ -5,6 +5,7 @@ import ListCard from "../components/ListCard";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "../supabase-client";
 import { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export interface List {
   id: number,
@@ -57,14 +58,22 @@ const Home = ({ session }: { session: Session }) => {
   }
 
   const addList = async () => {
-    if (!listName.trim() || lists.map(list =>
+    const isListNameUnique = lists.map(list =>
       list.name.toLowerCase().replaceAll(" ", ""))
-      .includes(listName.toLowerCase().replaceAll(" ", ""))) {
-      console.log("same list")
+      .includes(listName.toLowerCase().replaceAll(" ", ""))
+
+    if (!listName.trim()) {
+      // console.log("same list")
+      toast.error("Please enter list name!")
       return;
     }
 
-    console.log(session.user.id)
+    if (isListNameUnique) {
+      toast.error("Please enter unique list name!")
+      return;
+    }
+
+    // console.log(session.user.id)
 
     const { data, error } = await supabase
       .from('lists').insert({
@@ -86,7 +95,8 @@ const Home = ({ session }: { session: Session }) => {
 
   const addCardGlobally = async () => {
     if (!globalCardTitle || !selectedList) {
-      console.log(selectedList);
+      // console.log(selectedList);
+      toast.error("Please fill all the fields!");
       return;
     };
 
@@ -286,7 +296,7 @@ const Home = ({ session }: { session: Session }) => {
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
           {(provided) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-120px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-160px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
 
               {/* list card */}
               {lists.map((list, index) =>
