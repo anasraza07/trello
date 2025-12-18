@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import { supabase } from './supabase-client'
 import { Session } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
+import SplashScreen from './pages/SplashScreen';
 
 const Page = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -38,16 +39,16 @@ const Page = () => {
   }
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
-      console.error("Error signing out user:", error)
+      console.error("Logout failed:", error)
+      return;
     }
   }
-
   return (
     <div className='min-h-screen bg-linear-to-tl from-pink-300 to-purple-500 text-black place-content-center'>
       <Toaster />
-      {isLoading ? <div className='place-self-center'>Loading...</div>
+      {true ? <SplashScreen /> 
         : !session ? <Auth /> :
           <>
             <button className='cursor-pointer block place-self-end px-4 py-2 bg-purple-600 text-white font-semibold' onClick={logout}>Logout</button>

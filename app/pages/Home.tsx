@@ -38,12 +38,25 @@ const Home = ({ session }: { session: Session }) => {
     if (globalCardInputRef.current) {
       globalCardInputRef.current.focus();
     }
-
     fetchData();
+
+    const channel = supabase.channel("lists-channel")
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+      }, (payload) => {
+        // console.log(payload);
+        fetchData();
+      }).subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
+
   }, [])
 
   const fetchData = async () => {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('lists')
       .select('*, cards(*)')
       .order("index", { ascending: true })
@@ -54,6 +67,7 @@ const Home = ({ session }: { session: Session }) => {
       return;
     }
 
+    // console.log(data);
     setLists(data);
   }
 
@@ -163,6 +177,7 @@ const Home = ({ session }: { session: Session }) => {
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
+    // console.log(result)
 
     if (!destination) return;
     if (destination.droppableId == source.droppableId
@@ -175,7 +190,10 @@ const Home = ({ session }: { session: Session }) => {
         const newArray = [...lists];
         const [removedItem] = newArray.splice(source.index, 1);
         newArray.splice(destination.index, 0, removedItem);
+        newArray.forEach((list, index) => list.index = index);
+
         setLists(newArray);
+        // console.log("lists:", newArray);
 
         await Promise.all(
           newArray.map((list, index) =>
@@ -196,10 +214,13 @@ const Home = ({ session }: { session: Session }) => {
             myCards = [...list.cards];
             const [movedItem] = myCards.splice(source.index, 1);
             myCards.splice(destination.index, 0, movedItem);
+
+            myCards.forEach((card, index) => card.index = index);
             return { ...list, cards: myCards };
           })
-
           setLists(updatedLists)
+          // console.log("cards from same list:", updatedLists);
+
           await Promise.all(
             myCards.map((card, index) =>
               supabase.from("cards")
@@ -209,7 +230,6 @@ const Home = ({ session }: { session: Session }) => {
           )
 
         } else {
-
           const sourceListId = Number(source.droppableId.slice(3));
           const destinationListId = Number(
             destination.droppableId.slice(3)
@@ -217,7 +237,7 @@ const Home = ({ session }: { session: Session }) => {
 
           const sourceList = lists.find(l => l.id == sourceListId);
           const movedCard = sourceList?.cards[source.index];
-          if (!movedCard) return
+          if (!movedCard) return;
 
           const updatedLists = lists.map(list => {
             if (list.id == sourceListId) {
@@ -240,15 +260,17 @@ const Home = ({ session }: { session: Session }) => {
 
           const cards: Card[] = [];
           updatedLists.forEach(list => {
-            list.cards.forEach(card => cards.unshift(card))
+            list.cards.forEach((card, index) => {
+              card.index = index;
+              cards.push(card);
+            })
           })
 
-          // console.log(updatedList)
-          // console.log(updatedLists)
           setLists(updatedLists);
+          // console.log("cards from different lists:", updatedLists);
 
           await Promise.all(
-            cards.map(card =>
+            cards.map((card, index) =>
               supabase.from("cards")
                 .update({
                   index: card.index,
@@ -259,17 +281,13 @@ const Home = ({ session }: { session: Session }) => {
         }
       }
     }
-
   }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="">
-
+      <div>
         <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center items-center cursor-pointer text-white"
-          onClick={() => setIsModalOpen(true)}>
-          +
-        </button>
+          onClick={() => setIsModalOpen(true)}>+</button>
 
         {/* modal */}
         {isModalOpen && <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm transition-all duration-300 flex justify-center items-center">
@@ -277,7 +295,7 @@ const Home = ({ session }: { session: Session }) => {
         </div>}
 
         {/* global card input */}
-        <div className="input-container max-w-4xl mx-auto flex items-center gap-4 mb-12 pt-8">
+        <div className="input-container max-w-2xl mx-auto flex items-center gap-4 mb-12 pt-8">
           <input ref={globalCardInputRef} type="text" placeholder="Enter card title..." className="flex-1 bg-white ring-1 ring-blue-600 py-2 pl-3 rounded-md outline-none focus:ring-2"
             value={globalCardTitle}
             onChange={(e) => setGlobalCardTitle(e.target.value)} />
