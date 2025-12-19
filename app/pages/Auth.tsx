@@ -2,53 +2,122 @@
 import { FormEvent, useState } from "react";
 import { supabase } from "../supabase-client";
 import { toast } from "sonner";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false)
-  const [authForm, setAuthForm] = useState({ email: "", password: "" })
+  const [authForm, setAuthForm] = useState({
+    firstName: "", lastName: "", username: "", email: "", password: ""
+  })
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!authForm.email.trim() || !authForm.password.trim()) {
-      toast.error("Please fill all the fields!")
-      return;
-    }
 
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp(authForm);
+      if (!authForm.firstName.trim() || !authForm.lastName.trim() || !authForm.username.trim() || !authForm.email.trim() ||
+        !authForm.password.trim()) {
+        toast.error("Please fill all the fields!")
+        return;
+      }
+      const toastId = toast.loading("Creating your account...");
+
+      const { data, error } = await supabase.auth.signUp({
+        email: authForm.email,
+        password: authForm.password,
+        options: {
+          data: {
+            first_name: authForm.firstName,
+            last_name: authForm.lastName,
+            username: authForm.username,
+          }
+        }
+      });
+
       if (error) {
         console.error("Error signing up user:", error)
-        toast.error(error.message);
+        toast.error(error.message, { id: toastId });
+        return;
+
+      } else if (data.user && data.user.identities?.length === 0) {
+        toast.error("Email is already registered. Please login!", { id: toastId })
         return;
       }
-      toast.info("Please check your inbox and verify your email address.")
+
+      toast.info("Please check your inbox and verify your email address.", { id: toastId })
+
     } else {
-      const { error } = await supabase.auth.signInWithPassword(authForm);
+      if (!authForm.email.trim() || !authForm.password.trim()) {
+        toast.error("Please fill all the fields!")
+        return;
+      }
+
+      const toastId = toast.loading("Logging in...")
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authForm.email,
+        password: authForm.password
+      });
+
       if (error) {
         console.error("Error signing in user:", error);
-        toast.error(error.message);
+        toast.error(error.message, { id: toastId });
         return;
       }
+
+      toast.dismiss(toastId);
     }
 
-    setAuthForm({ email: "", password: "" })
+    // emptying inputs
+    setAuthForm({
+      firstName: "", lastName: "", username: "", email: "", password: ""
+    })
   }
 
   const switchFormState = () => {
     setIsSignUp(!isSignUp);
-    setAuthForm({ email: "", password: "" })
+    // emptying inputs
+    setAuthForm({
+      firstName: "", lastName: "", username: "", email: "", password: ""
+    })
   }
 
   return (
-    <form className="flex flex-col max-w-sm gap-2 bg-purple-200/10 p-4 py-6 mx-auto" onSubmit={(e) => handleSubmit(e)}>
-      <h2 className="text-xl font-semibold mb-4 text-center text-black">
-        {isSignUp ? "Sign Up" : "Login"}</h2>
-      <input className="bg-white border-none outline-none ring-1 focus:ring-2 ring-blue-500 pl-2 py-1 rounded-sm" type="email" autoComplete="email" placeholder="Enter email" value={authForm.email} onChange={e => setAuthForm({ ...authForm, email: e.target.value })} />
-      <input className="bg-white border-none outline-none ring-1 focus:ring-2 ring-blue-500 pl-2 py-1 rounded-sm" type="password" placeholder="Enter password" value={authForm.password} onChange={e => setAuthForm({ ...authForm, password: e.target.value })} />
-      <button className="font-semibold bg-blue-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none w-fit mx-auto">
-        {isSignUp ? "Sign Up" : "Login"}</button>
-      <button type="button" className="font-semibold bg-green-600 rounded-sm py-1.5 px-3 text-white cursor-pointer outline-none w-fit mx-auto" value={authForm.password} onClick={switchFormState}>Switch to {isSignUp ? "Login" : "Sign Up"}</button>
-    </form>
+    <div className="bg-white max-w-2xl mx-auto rounded-md p-2 sm:p-8">
+      <form className="flex flex-col max-w-sm gap-4 p-4 py-6 mx-auto" onSubmit={(e) => handleSubmit(e)}>
+        <h2 className="text-3xl font-semibold mb-2 text-black">
+          {isSignUp ? "Sign Up" : "Sign In"}
+        </h2>
+        {isSignUp && <Input type="text" placeholder="Enter First Name"
+          value={authForm.firstName} onChange={e => setAuthForm({
+            ...authForm, firstName: e.target.value
+          })} />}
+        {isSignUp && <Input type="text" placeholder="Enter Last Name"
+          value={authForm.lastName} onChange={e => setAuthForm({
+            ...authForm, lastName: e.target.value
+          })} />}
+        {isSignUp && <Input type="text" placeholder="Enter Username"
+          value={authForm.username} onChange={e => setAuthForm({
+            ...authForm, username: e.target.value
+          })} />}
+        <Input type="email" placeholder="Enter Email"
+          value={authForm.email} onChange={e => setAuthForm({
+            ...authForm, email: e.target.value
+          })} />
+        <Input type="password" placeholder="Enter Password"
+          value={authForm.password} onChange={e => setAuthForm({
+            ...authForm, password: e.target.value
+          })} />
+
+        <Button type="submit" title={isSignUp ? "Register" : "Login"} />
+
+        <div>
+          <span>{isSignUp ? "Already have an account?" :
+            "Don't have an account?"}</span>
+          <span className="text-blue-500 cursor-pointer" onClick={switchFormState}>{isSignUp ? " Sign in" : " Create One"}</span>
+        </div>
+      </form>
+    </div>
   )
 }
 

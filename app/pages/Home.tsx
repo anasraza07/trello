@@ -6,6 +6,8 @@ import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "../supabase-client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import Input from "../components/Input";
+import Button from "../components/Button";
 
 export interface List {
   id: number,
@@ -83,7 +85,7 @@ const Home = ({ session }: { session: Session }) => {
     }
 
     if (isListNameUnique) {
-      toast.error("Please enter unique list name!")
+      toast.error("List name already exist!")
       return;
     }
 
@@ -285,7 +287,7 @@ const Home = ({ session }: { session: Session }) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div>
+      <div className="pt-4">
         <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center items-center cursor-pointer text-white"
           onClick={() => setIsModalOpen(true)}>+</button>
 
@@ -295,26 +297,23 @@ const Home = ({ session }: { session: Session }) => {
         </div>}
 
         {/* global card input */}
-        <div className="input-container max-w-2xl mx-auto flex items-center gap-4 mb-12 pt-8">
-          <input ref={globalCardInputRef} type="text" placeholder="Enter card title..." className="flex-1 bg-white ring-1 ring-blue-600 py-2 pl-3 rounded-md outline-none focus:ring-2"
-            value={globalCardTitle}
-            onChange={(e) => setGlobalCardTitle(e.target.value)} />
+        <div className="input-container max-w-xl mx-auto flex gap-4 mb-12 p-8 bg-white rounded-md">
+          <Input ref={globalCardInputRef} type="text" placeholder="Enter card title..." value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} />
 
           {/* select list */}
-          <select name="" id="" className="outline-none cursor-pointer [appearance:base-select] bg-white ring-1 focus:ring-2 ring-blue-600 py-2 px-3 rounded-md min-w-40 text-gray-700" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
+          <select name="" id="" className="outline-none cursor-pointer [appearance:base-select] bg-white ring-1 ring-gray-800 py-2 px-3 place-items-center rounded-sm min-w-40 text-gray-500 text-sm" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
             <option value="" disabled>Select your list</option>
             {lists.map(list => <option key={list.id} value={list.name}>
-              {list.name}</option>)}
+              {list.name}</option>)}  z
           </select>
-          <button className="bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer hover:bg-blue-700 outline-none"
-            onClick={addCardGlobally}>Add card</button>
+          <Button title="Add card" onClick={addCardGlobally} />
         </div>
 
         {/* lists */}
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
           {(provided) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-160px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-260px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
 
               {/* list card */}
               {lists.map((list, index) =>

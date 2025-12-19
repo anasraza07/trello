@@ -36,8 +36,8 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.cards.length}</span>
             </div>
           ) : (
-            <>
-              <div className="top-bar flex justify-between p-2 mb-1 mx-3">
+            <div className='space-y-1'>
+              <div className="top-bar flex justify-between py-2 px-5">
                 <span className="list-name text-sm font-semibold">{list.name}</span>
                 <div className="actions flex items-center gap-3">
                   <span className="cursor-pointer"
@@ -50,7 +50,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               <Droppable droppableId={`ul-${list.id.toString()}`}
                 direction='vertical' type='CHILD'>
                 {(provided) => (
-                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-[380px] p-2"
+                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-52 px-2"
                     ref={provided.innerRef}
                     {...provided.droppableProps}>
                     {list.cards.map((item, index) => (
@@ -64,7 +64,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               </Droppable>
 
               <CardInputField list={list} listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle} setCardTitle={setCardTitle} />
-            </>
+            </div>
           )}
         </div>
       )}
