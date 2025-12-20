@@ -32,6 +32,8 @@ const Home = ({ session }: { session: Session }) => {
   const [globalCardTitle, setGlobalCardTitle] = useState("");
   const [selectedList, setSelectedList] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
+  // const addCardRef = useRef<HTMLButtonElement>(null);
+  const [loading, setLoading] = useState(false);
 
   const modelRef = useRef(null);
   const globalCardInputRef = useRef<HTMLInputElement>(null)
@@ -47,7 +49,6 @@ const Home = ({ session }: { session: Session }) => {
         event: "*",
         schema: "public",
       }, (payload) => {
-        // console.log(payload);
         fetchData();
       }).subscribe();
 
@@ -69,7 +70,6 @@ const Home = ({ session }: { session: Session }) => {
       return;
     }
 
-    // console.log(data);
     setLists(data);
   }
 
@@ -78,19 +78,17 @@ const Home = ({ session }: { session: Session }) => {
       list.name.toLowerCase().replaceAll(" ", ""))
       .includes(listName.toLowerCase().replaceAll(" ", ""))
 
+    if (loading) return;
     if (!listName.trim()) {
-      // console.log("same list")
       toast.error("Please enter list name!")
       return;
     }
-
     if (isListNameUnique) {
       toast.error("List name already exist!")
       return;
     }
 
-    // console.log(session.user.id)
-
+    setLoading(true);
     const { data, error } = await supabase
       .from('lists').insert({
         name: listName, index: lists.length,
@@ -104,20 +102,22 @@ const Home = ({ session }: { session: Session }) => {
     }
 
     setLists(prevLists => [...prevLists, data[0]]);
+    setLoading(false);
 
     setListName("");
     setIsModalOpen(false)
   }
 
   const addCardGlobally = async () => {
+    if (loading) return;
     if (!globalCardTitle || !selectedList) {
-      // console.log(selectedList);
       toast.error("Please fill all the fields!");
       return;
     };
 
     const cardList = lists.find(list => list.name == selectedList);
 
+    setLoading(true);
     const { data, error } = await supabase
       .from('cards')
       .insert({
@@ -139,13 +139,18 @@ const Home = ({ session }: { session: Session }) => {
         } : list
       )
     )
-    setGlobalCardTitle("")
+
+    setLoading(true);
+    setGlobalCardTitle("");
   }
 
   const addCard = async () => {
+    if (loading) return;
     if (!cardTitle.trim()) return;
 
     const cardList = lists.find(list => list.id == listId);
+    setLoading(true);
+
     const { data, error } = await supabase
       .from('cards')
       .insert({
@@ -159,7 +164,7 @@ const Home = ({ session }: { session: Session }) => {
       console.error(error);
       return;
     }
-    // console.log(data)
+    setLoading(false);
 
     setLists(prevLists =>
       prevLists.map(list =>
@@ -179,7 +184,6 @@ const Home = ({ session }: { session: Session }) => {
 
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
-    // console.log(result)
 
     if (!destination) return;
     if (destination.droppableId == source.droppableId
@@ -195,7 +199,6 @@ const Home = ({ session }: { session: Session }) => {
         newArray.forEach((list, index) => list.index = index);
 
         setLists(newArray);
-        // console.log("lists:", newArray);
 
         await Promise.all(
           newArray.map((list, index) =>
@@ -221,7 +224,6 @@ const Home = ({ session }: { session: Session }) => {
             return { ...list, cards: myCards };
           })
           setLists(updatedLists)
-          // console.log("cards from same list:", updatedLists);
 
           await Promise.all(
             myCards.map((card, index) =>
@@ -269,10 +271,9 @@ const Home = ({ session }: { session: Session }) => {
           })
 
           setLists(updatedLists);
-          // console.log("cards from different lists:", updatedLists);
 
           await Promise.all(
-            cards.map((card, index) =>
+            cards.map((card) =>
               supabase.from("cards")
                 .update({
                   index: card.index,
@@ -306,7 +307,8 @@ const Home = ({ session }: { session: Session }) => {
             {lists.map(list => <option key={list.id} value={list.name}>
               {list.name}</option>)}  z
           </select>
-          <Button title="Add card" onClick={addCardGlobally} />
+          <Button title="Add card" onClick={addCardGlobally}
+            loading={loading} />
         </div>
 
         {/* lists */}

@@ -114,7 +114,8 @@ const Auth = () => {
         <div>
           <span>{isSignUp ? "Already have an account?" :
             "Don't have an account?"}</span>
-          <span className="text-blue-500 cursor-pointer" onClick={switchFormState}>{isSignUp ? " Sign in" : " Create One"}</span>
+          <span className="text-blue-500 cursor-pointer"
+            onClick={switchFormState}>{isSignUp ? " Sign in" : " Create One"}</span>
         </div>
       </form>
     </div>

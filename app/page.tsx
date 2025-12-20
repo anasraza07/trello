@@ -55,7 +55,7 @@ const Page = () => {
       {isLoading ? <SplashScreen />
         : !session ? <Auth /> :
           <>
-            <div className='bg-white p-4 flex justify-between items-center'>
+            <div className='bg-[#1F1F21] text-white p-4 flex justify-between items-center'>
               <h1 className='text-3xl my-2 '>Welcome back, {session.user.user_metadata.first_name} &#128075;</h1>
               <Button title='Logout' onClick={logout} />
               {isLoading && toast.loading("Logging out...")}
