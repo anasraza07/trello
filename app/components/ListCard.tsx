@@ -28,17 +28,18 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
       index={index}>
       {(provided) => (
         <div ref={provided.innerRef} {...provided.draggableProps}
-          {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-amber-200 mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
+          {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-[#F1F2F4] mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
           {isCollapse ? (
-            <div onClick={toggleCollapse} className='flex flex-col rounded-[10px] items-center hover:bg-amber-300/30 py-3 px-3 cursor-pointer'>
+            <div onClick={toggleCollapse} className='flex flex-col rounded-[10px] items-center hover:bg-[#DCDFE4] py-3 px-3 cursor-pointer'>
               <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
               <span className="list-name text-[15px] font-semibold [writing-mode:vertical-lr] mb-2">{list.name}</span>
               <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.cards.length}</span>
             </div>
           ) : (
-            <div className='space-y-1'>
+            <div className={'space-y-2'}>
               <div className="top-bar flex justify-between py-2 px-5">
-                <span className="list-name text-sm font-semibold">{list.name}</span>
+                <span className="list-name text-sm font-semibold">
+                  {list.name}</span>
                 <div className="actions flex items-center gap-3">
                   <span className="cursor-pointer"
                     onClick={toggleCollapse}><RiCollapseHorizontalLine size={18} /></span>
@@ -50,7 +51,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               <Droppable droppableId={`ul-${list.id.toString()}`}
                 direction='vertical' type='CHILD'>
                 {(provided) => (
-                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-52 px-2"
+                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-72 px-2"
                     ref={provided.innerRef}
                     {...provided.droppableProps}>
                     {list.cards.map((item, index) => (
@@ -67,8 +68,9 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
             </div>
           )}
         </div>
-      )}
-    </Draggable>
+      )
+      }
+    </Draggable >
   )
 }
 

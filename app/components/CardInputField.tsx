@@ -29,7 +29,7 @@ const CardInputField: React.FC<Props> = ({ list, listId, addCard, cardTitle, set
   return (
     <div className={`${listId == list.id && "mx-2"}`}>
       {listId != list.id ? (
-        <div className="p-2 mx-2 flex items-center gap-1.5 cursor-pointer hover:bg-amber-300 hover:text-gray-800 rounded-md text-gray-700" onClick={() => setListId(list.id)}>
+        <div className="p-2 mx-2 flex items-center gap-1.5 cursor-pointer hover:bg-[#DCDFE4] hover:text-gray-800 rounded-md text-gray-700" onClick={() => setListId(list.id)}>
           <span>< IoMdAdd size={18} /></span>
           <span className="flex-1 text-sm">Add a card</span>
         </div>

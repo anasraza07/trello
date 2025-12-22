@@ -4,6 +4,7 @@ import { supabase } from "../supabase-client";
 import { toast } from "sonner";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import Label from "../components/Label";
 
 const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -83,39 +84,59 @@ const Auth = () => {
   }
 
   return (
-    <div className="bg-white max-w-2xl mx-auto rounded-md p-2 sm:p-8">
+    <div className="bg-white max-w-xl mx-auto rounded-md p-2">
       <form className="flex flex-col max-w-sm gap-4 p-4 py-6 mx-auto" onSubmit={(e) => handleSubmit(e)}>
         <h2 className="text-3xl font-semibold mb-2 text-black">
           {isSignUp ? "Sign Up" : "Sign In"}
         </h2>
-        {isSignUp && <Input type="text" placeholder="Enter First Name"
-          value={authForm.firstName} onChange={e => setAuthForm({
-            ...authForm, firstName: e.target.value
-          })} />}
-        {isSignUp && <Input type="text" placeholder="Enter Last Name"
-          value={authForm.lastName} onChange={e => setAuthForm({
-            ...authForm, lastName: e.target.value
-          })} />}
-        {isSignUp && <Input type="text" placeholder="Enter Username"
-          value={authForm.username} onChange={e => setAuthForm({
-            ...authForm, username: e.target.value
-          })} />}
-        <Input type="email" placeholder="Enter Email"
-          value={authForm.email} onChange={e => setAuthForm({
-            ...authForm, email: e.target.value
-          })} />
-        <Input type="password" placeholder="Enter Password"
-          value={authForm.password} onChange={e => setAuthForm({
-            ...authForm, password: e.target.value
-          })} />
+        {isSignUp && (
+          <>
+            <div className="flex flex-col">
+              <Label labelFor="first-name" text="First name" />
+              <Input type="text" id="first-name" placeholder="Enter first name" autoComplete="given-name"
+                value={authForm.firstName} onChange={e => setAuthForm({
+                  ...authForm, firstName: e.target.value
+                })} />
+            </div>
+            <div className="flex flex-col">
+              <Label labelFor="last-name" text="Last name" />
+              <Input type="text" id="last-name" placeholder="Enter last Name" autoComplete="family-name"
+                value={authForm.lastName} onChange={e => setAuthForm({
+                  ...authForm, lastName: e.target.value
+                })} />
+            </div>
+            <div className="flex flex-col">
+              <Label labelFor="username" text="Usernmae" />
+              <Input type="text" id="username" placeholder="Enter username"
+                value={authForm.username} autoComplete="username" onChange={e => setAuthForm({
+                  ...authForm, username: e.target.value
+                })} />
+            </div>
+          </>
+        )}
+        <div className="flex flex-col">
+          <Label labelFor="email" text="Email" />
+          <Input type="email" id="email" placeholder="Enter email" autoComplete="email"
+            value={authForm.email} onChange={e => setAuthForm({
+              ...authForm, email: e.target.value
+            })} />
+        </div>
+        <div className="flex flex-col">
+          <Label labelFor="password" text="Password" />
+          <Input type="password" id="password" placeholder="Enter password"
+            autoComplete="off"
+            value={authForm.password} onChange={e => setAuthForm({
+              ...authForm, password: e.target.value
+            })} />
+        </div>
 
         <Button type="submit" title={isSignUp ? "Register" : "Login"} />
 
-        <div>
-          <span>{isSignUp ? "Already have an account?" :
+        <div className="text-[15px]">
+          <span>{isSignUp ? "Already have an account?" :  
             "Don't have an account?"}</span>
-          <span className="text-blue-500 cursor-pointer"
-            onClick={switchFormState}>{isSignUp ? " Sign in" : " Create One"}</span>
+          <span className="text-blue-600 cursor-pointer underline hover:no-underline inline-block ml-1"
+            onClick={switchFormState}>{isSignUp ? "Sign in" : "Create One"}</span>
         </div>
       </form>
     </div>

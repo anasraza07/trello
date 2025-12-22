@@ -29,7 +29,7 @@ const Button: FC<Props> = (props) => {
   }
 
   return (
-    <button type={type} className="bg-linear-to-tl from-pink-400 to-purple-500 rounded-sm py-3 px-6 text-white cursor-pointer outline-none w-fit">{title}</button>
+    <button type={type} className={`bg-linear-to-tl from-pink-400 to-purple-500 rounded-sm ${size == "md" ? "py-3 px-6" : "py-1.5 px-4"} text-white cursor-pointer outline-none w-fit`}>{title}</button>
   )
 }
 

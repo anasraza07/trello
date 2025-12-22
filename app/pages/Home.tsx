@@ -32,31 +32,37 @@ const Home = ({ session }: { session: Session }) => {
   const [globalCardTitle, setGlobalCardTitle] = useState("");
   const [selectedList, setSelectedList] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
-  // const addCardRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(false);
 
   const modelRef = useRef(null);
   const globalCardInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (globalCardInputRef.current) {
-      globalCardInputRef.current.focus();
-    }
     fetchData();
 
-    const channel = supabase.channel("lists-channel")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-      }, (payload) => {
-        fetchData();
-      }).subscribe();
+    const channel = supabase
+      .channel("lists-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "lists" },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "cards" },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-    }
+    };
+  }, []);
 
-  }, [])
 
   const fetchData = async () => {
     const { data, error } = await supabase
@@ -65,7 +71,7 @@ const Home = ({ session }: { session: Session }) => {
       .order("index", { ascending: true })
       .order("index", { referencedTable: "cards", ascending: true })
 
-    if (error || !data) {
+    if (error) {
       console.error(error);
       return;
     }
@@ -140,7 +146,7 @@ const Home = ({ session }: { session: Session }) => {
       )
     )
 
-    setLoading(true);
+    setLoading(false);
     setGlobalCardTitle("");
   }
 
@@ -182,7 +188,7 @@ const Home = ({ session }: { session: Session }) => {
     }
   }
 
-  const onDragEnd = async (result: DropResult) => {
+  async function onDragEnd(result: DropResult) {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -193,7 +199,7 @@ const Home = ({ session }: { session: Session }) => {
     } else {
       // lists logic
       if (result.type == "PARENT") {
-        const newArray = [...lists];
+        const newArray = [...lists.map(list => ({ ...list }))];
         const [removedItem] = newArray.splice(source.index, 1);
         newArray.splice(destination.index, 0, removedItem);
         newArray.forEach((list, index) => list.index = index);
@@ -207,6 +213,7 @@ const Home = ({ session }: { session: Session }) => {
               .eq("id", list.id)
           )
         )
+
         // cards logic
       } else if (result.type == "CHILD") {
         if (source.droppableId == destination.droppableId) {
@@ -216,7 +223,7 @@ const Home = ({ session }: { session: Session }) => {
           const updatedLists = lists.map(list => {
             if (list.id != myListId) return list;
 
-            myCards = [...list.cards];
+            myCards = [...list.cards.map(card => ({ ...card }))];
             const [movedItem] = myCards.splice(source.index, 1);
             myCards.splice(destination.index, 0, movedItem);
 
@@ -241,6 +248,7 @@ const Home = ({ session }: { session: Session }) => {
 
           const sourceList = lists.find(l => l.id == sourceListId);
           const movedCard = sourceList?.cards[source.index];
+
           if (!movedCard) return;
 
           const updatedLists = lists.map(list => {
@@ -288,34 +296,30 @@ const Home = ({ session }: { session: Session }) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="pt-4">
-        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center items-center cursor-pointer text-white"
-          onClick={() => setIsModalOpen(true)}>+</button>
-
-        {/* modal */}
-        {isModalOpen && <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm transition-all duration-300 flex justify-center items-center">
-          <ListInputField listName={listName} setListName={setListName} addList={addList} />
-        </div>}
-
+      <div>
         {/* global card input */}
-        <div className="input-container max-w-xl mx-auto flex gap-4 mb-12 p-8 bg-white rounded-md">
-          <Input ref={globalCardInputRef} type="text" placeholder="Enter card title..." value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} />
+        <div className="input-container bg-linear-to-r from-[#544797] to-[#7A4E93] mb-12 py-4">
+          <div className="max-w-3xl flex mx-auto space-x-6">
+            <div className="space-x-4 flex flex-1">
+              <Input ref={globalCardInputRef} type="text" placeholder="Enter card title..." value={globalCardTitle} onChange={(e) => setGlobalCardTitle(e.target.value)} extraClass="bg-[#6C5EAD]  border border-[#fff] hover:bg-[#9186C2] focus:placeholder:text-gray-600 focus:bg-[#FFFDF3] placeholder:text-[#FFFDF3] flex-1" />
 
-          {/* select list */}
-          <select name="" id="" className="outline-none cursor-pointer [appearance:base-select] bg-white ring-1 ring-gray-800 py-2 px-3 place-items-center rounded-sm min-w-40 text-gray-500 text-sm" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
-            <option value="" disabled>Select your list</option>
-            {lists.map(list => <option key={list.id} value={list.name}>
-              {list.name}</option>)}  z
-          </select>
-          <Button title="Add card" onClick={addCardGlobally}
-            loading={loading} />
+              {/* select list */}
+              <select name="" id="" className="border-none outline-none cursor-pointer [appearance:base-select] bg-[#6C5EAD] hover:bg-[#9186C2] text-[#FFFDF3] focus:text-gray-600 focus:bg-[#FFFDF3] py-2 px-3 place-items-center rounded-sm min-w-40 text-sm" value={selectedList} onChange={(e) => setSelectedList(e.target.value)}>
+                <option value="" disabled>Select your list</option>
+                {lists.map(list => <option key={list.id} value={list.name}>
+                  {list.name}</option>)}
+              </select>
+            </div>
+            <Button title="Add card" size="sm" onClick={addCardGlobally}
+              loading={loading} />
+          </div>
         </div>
 
         {/* lists */}
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
           {(provided) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-260px)] overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-168px)] overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4">
 
               {/* list card */}
               {lists.map((list, index) =>
@@ -326,6 +330,16 @@ const Home = ({ session }: { session: Session }) => {
             </div>
           )}
         </Droppable>
+
+        <button className="w-12 h-12 bg-purple-500 hover:bg-purple-500/90 rounded-full absolute bottom-10 right-6 text-3xl flex justify-center items-center cursor-pointer text-white"
+          onClick={() => setIsModalOpen(true)}>+</button>
+
+        {/* modal */}
+        {isModalOpen &&
+          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm transition-all duration-300 flex justify-center items-center">
+            <ListInputField listName={listName} setListName={setListName} addList={addList} />
+          </div>
+        }
       </div>
     </DragDropContext>
   )

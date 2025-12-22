@@ -50,14 +50,15 @@ const Page = () => {
     setIsLoading(false)
   }
   return (
-    <div className={`min-h-screen bg-linear-to-tl from-pink-400 to-purple-500 text-black place-content-center ${!session && "px-4"}`}>
+    <div className={`min-h-screen bg-linear-to-tl from-[#745EC6] 
+    to-[#DD72BC] text-black overflow-hidden ${!session && "place-content-center px-4"}`}>
       <Toaster />
-      {isLoading ? <SplashScreen />
-        : !session ? <Auth /> :
+      {isLoading ? <SplashScreen /> :
+        !session ? <Auth /> :
           <>
-            <div className='bg-[#1F1F21] text-white p-4 flex justify-between items-center'>
-              <h1 className='text-3xl my-2 '>Welcome back, {session.user.user_metadata.first_name} &#128075;</h1>
-              <Button title='Logout' onClick={logout} />
+            <div className='bg-[#473699] text-[#FCFBFD] py-2 px-4 flex justify-between items-center'>
+              <h1 className='text-xl font-bold'>Welcome back, {session.user.user_metadata.first_name} &#128075;</h1>
+              <Button title='Logout' onClick={logout} size='sm' />
               {isLoading && toast.loading("Logging out...")}
             </div>
             <Home session={session} />
