@@ -5,6 +5,7 @@ import { SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
 import { Draggable, Droppable } from '@hello-pangea/dnd'
 import ItemCard from './ItemCard'
+import { AiOutlineDelete } from 'react-icons/ai'
 
 interface Props {
   list: List,
@@ -13,10 +14,12 @@ interface Props {
   setCardTitle: React.Dispatch<SetStateAction<string>>
   addCard: () => void,
   cardTitle: string,
-  index: number
+  index: number,
+  deleteList: (listId: number) => void,
+  handleIsDone: (cardId: number, listId: number) => void;
 }
 
-const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle, index }) => {
+const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle, index, deleteList, handleIsDone }) => {
   const [isCollapse, setIsCollapse] = useState<boolean>(false);
 
   const toggleCollapse = () => {
@@ -26,7 +29,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
   return (
     <Draggable draggableId={`li-${list.id.toString()}`}
       index={index}>
-      {(provided) => (
+      {(provided, snapshot) => (
         <div ref={provided.innerRef} {...provided.draggableProps}
           {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-[#F1F2F4] mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
           {isCollapse ? (
@@ -41,9 +44,11 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
                 <span className="list-name text-sm font-semibold">
                   {list.name}</span>
                 <div className="actions flex items-center gap-3">
-                  <span className="cursor-pointer"
-                    onClick={toggleCollapse}><RiCollapseHorizontalLine size={18} /></span>
-                  <span className="cursor-pointer"><BsThreeDots /></span>
+                  <button className="cursor-pointer"
+                    onClick={toggleCollapse}><RiCollapseHorizontalLine size={18} /></button>
+                  <button className="cursor-pointer"
+                    onClick={() => deleteList(list.id)}><AiOutlineDelete size={18} />
+                  </button>
                 </div>
               </div>
 
@@ -57,7 +62,8 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
                     {list.cards.map((item, index) => (
                       <ItemCard key={item.id}
                         item={item}
-                        index={index} />
+                        index={index}
+                        handleIsDone={handleIsDone} />
                     ))}
                     {provided.placeholder}
                   </ul>

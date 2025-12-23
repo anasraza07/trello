@@ -8,6 +8,7 @@ import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import styled from "styled-components"
 
 export interface List {
   id: number,
@@ -22,6 +23,7 @@ export interface Card {
   name: string,
   list_id: number,
   index: number;
+  is_done: boolean;
 }
 
 const Home = ({ session }: { session: Session }) => {
@@ -33,6 +35,8 @@ const Home = ({ session }: { session: Session }) => {
   const [selectedList, setSelectedList] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false);
+
+  const [dropIndex, setDropIndex] = useState<number | null>(null);  // const [cardId, setCardId] = useState(0);
 
   const modelRef = useRef(null);
   const globalCardInputRef = useRef<HTMLInputElement>(null)
@@ -112,6 +116,24 @@ const Home = ({ session }: { session: Session }) => {
 
     setListName("");
     setIsModalOpen(false)
+  }
+
+  const deleteList = async (listId: number) => {
+    const updatedList = lists.filter(list => list.id != listId)
+    updatedList.forEach((list, index) => list.index = index);
+    setLists(updatedList);
+
+    await supabase.from("lists")
+      .delete()
+      .eq("id", listId)
+
+    await Promise.all(
+      updatedList.map(list =>
+        supabase.from("lists")
+          .update({ "index": list.index })
+          .eq("id", list.id)
+      )
+    )
   }
 
   const addCardGlobally = async () => {
@@ -292,10 +314,46 @@ const Home = ({ session }: { session: Session }) => {
         }
       }
     }
+
+    setDropIndex(null);
+  }
+
+  const handleIsDone = async (cardId: number, listId: number) => {
+    const updatedLists = lists.map(list => {
+      return list.id == listId ?
+        {
+          ...list, cards: list.cards.map(card =>
+            card.id == cardId ?
+              { ...card, is_done: !card.is_done } : card
+          )
+        } : list
+    })
+
+    setLists(updatedLists);
+
+    const { data, error: fetchError } = await supabase.from("cards")
+      .select("is_done").eq("id", cardId).single()
+
+    if (fetchError) {
+      console.error("Fetching error:", fetchError)
+      return;
+    }
+
+    console.log(data.is_done)
+
+    const { data: updatedData, error: updateError } = await supabase.from("cards").update({ "is_done": !data.is_done })
+      .eq("id", cardId).select();
+
+    console.log(updatedData);
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={onDragEnd}
+      onDragUpdate={(update) => {
+        if (update.destination) {
+          setDropIndex(update.destination.index);
+        }
+      }}>
       <div>
         {/* global card input */}
         <div className="input-container bg-linear-to-r from-[#544797] to-[#7A4E93] mb-12 py-4">
@@ -317,16 +375,21 @@ const Home = ({ session }: { session: Session }) => {
 
         {/* lists */}
         <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
-          {(provided) => (
+          {(provided, snapshot) => (
             <div ref={provided.innerRef}
-              {...provided.droppableProps} className="list-cards flex items-start min-h-[calc(100vh-168px)] overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4">
+              {...provided.droppableProps}
+              className={`list-cards flex items-start min-h-[calc(100vh-168px)] overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4`}>
 
               {/* list card */}
               {lists.map((list, index) =>
                 <ListCard key={list.id} list={list}
                   listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle}
-                  setCardTitle={setCardTitle} index={index} />)}
+                  setCardTitle={setCardTitle} index={index}
+                  deleteList={deleteList} handleIsDone={handleIsDone} />)}
               {provided.placeholder}
+              {snapshot.isDraggingOver && (
+                <div className="w-64 h-40 mx-2 rounded-lg border-2 border-dashed border-purple-400 bg-purple-200/40" />
+              )}
             </div>
           )}
         </Droppable>
