@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { isEmpty } from "lodash";
+import { IoMdClose } from "react-icons/io";
+import { FaRegCircle } from "react-icons/fa";
+import { GrTextAlignFull } from "react-icons/gr";
 
 export interface List {
   id: number,
@@ -420,6 +423,11 @@ const Home = ({ session }: { session: Session }) => {
     console.log(updatedData);
   }
 
+  const handleCardDetails = ((cardItem: Card) => {
+    console.log(cardItem);
+    setIsModalOpen(true);
+  })
+
   return (
     <DragDropContext onDragEnd={onDragEnd}
       onDragStart={handleDragStart}
@@ -456,7 +464,8 @@ const Home = ({ session }: { session: Session }) => {
                 <ListCard key={list.id} list={list}
                   listId={listId} setListId={setListId} addCard={addCard} cardTitle={cardTitle}
                   setCardTitle={setCardTitle} index={index}
-                  deleteList={deleteList} handleIsDone={handleIsDone} />)}
+                  deleteList={deleteList} handleIsDone={handleIsDone}
+                  handleCardDetails={handleCardDetails} />)}
               {provided.placeholder}
               {!isEmpty(placeholderProps) && snapshot.isDraggingOver && (
                 <div
@@ -482,8 +491,44 @@ const Home = ({ session }: { session: Session }) => {
             <ListInputField listName={listName} setListName={setListName} addList={addList} />
           </div>
         }
+
+        {isModalOpen &&
+          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm transition-all duration-300 flex justify-center items-center">
+            {/* card content component */}
+            <div className="card-content w-5xl bg-white rounded-xl">
+              <div className="top-bar py-2 px-4 border-b border-gray-300">
+                <button className="hover:bg-neutral-400/20 rounded-sm place-self-end cursor-pointer block p-1.5" onClick={
+                  () => setIsModalOpen(false)
+                }>
+                  <IoMdClose size={20} />
+                </button>
+              </div>
+              <div className="main-content flex">
+                <div className="desc-section flex-[0.55] p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <FaRegCircle size={18} />
+                    <input type="text" value={"FaReg Circle"} className="w-full px-2 py-1 text-xl font-semibold outline-blue-600" />
+                  </div>
+                  <div className="card-description flex gap-4">
+                    <GrTextAlignFull size={16} className="text-[#46474b] pt-0.5" />
+                    <div className="content w-full text-[#46474b]">
+                      <h2 className="text-[15px] font-semibold mb-4">Description
+                      </h2>
+                      <textarea name="" id="" placeholder="Add a more detailed description..." className="w-full border border-gray-500 resize-none rounded-sm p-2 placeholder:text-sm placeholder:font-semibold placeholder:text-[#7a7d84] block cursor-pointer hover:bg-[#F0F1F2]">
+                      </textarea>
+                    </div>
+                    <div className="flex items-center gap-4 text-[#46474b] mb-4">
+                    </div>
+
+                  </div>
+                </div>
+                {/* <div className="comments-section flex-[0.45] bg-[#f8f8f8] p-4 border-l border-gray-300"></div> */}
+              </div>
+            </div>
+          </div>
+        }
       </div>
-    </DragDropContext>
+    </DragDropContext >
   )
 }
 

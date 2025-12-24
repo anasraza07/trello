@@ -44,7 +44,7 @@ const CardInputField: React.FC<Props> = ({ list, listId, addCard, cardTitle, set
             }}></textarea>
           <div className="space-x-1 flex">
             <Button size="sm" type="submit" title="Add card" />
-            <button type="button" className="py-1.5 px-1.5 hover:bg-neutral-400/40 rounded-sm cursor-pointer text-gray-900" onClick={closeCardInputField}>
+            <button type="button" className="p-1.5 hover:bg-neutral-400/40 rounded-sm cursor-pointer text-gray-900" onClick={closeCardInputField}>
               <IoMdClose size={20} /></button>
           </div>
         </form>

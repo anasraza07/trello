@@ -1,5 +1,5 @@
 import { RiCollapseHorizontalLine } from 'react-icons/ri'
-import { List } from '../pages/Home'
+import { Card, List } from '../pages/Home'
 import { FormEvent, SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
 import { Draggable, Droppable } from 'react-beautiful-dnd'
@@ -16,9 +16,11 @@ interface Props {
   index: number,
   deleteList: (listId: number) => void,
   handleIsDone: (cardId: number, listId: number) => void;
+  handleCardDetails: (item: Card) => void;
 }
 
-const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle, index, deleteList, handleIsDone }) => {
+const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle, setCardTitle, index, deleteList, handleIsDone,
+  handleCardDetails }) => {
   const [isCollapse, setIsCollapse] = useState<boolean>(false);
 
   const toggleCollapse = () => {
@@ -65,7 +67,8 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
                       <ItemCard key={item.id}
                         item={item}
                         index={index}
-                        handleIsDone={handleIsDone} />
+                        handleIsDone={handleIsDone}
+                        handleCardDetails={handleCardDetails} />
                     ))}
                     {provided.placeholder}
                   </ul>
