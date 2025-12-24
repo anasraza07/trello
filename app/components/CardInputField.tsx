@@ -1,13 +1,13 @@
 import { IoMdAdd, IoMdClose } from "react-icons/io"
 import { List } from "../pages/Home";
-import { SetStateAction, useEffect, useRef } from "react"
+import { FormEvent, SetStateAction, useEffect, useRef } from "react"
 import Button from "./Button";
 
 interface Props {
   list: List,
   listId: number,
   setListId: React.Dispatch<SetStateAction<number>>,
-  addCard: () => void,
+  addCard: (e?: FormEvent<HTMLFormElement>) => Promise<void>,
   cardTitle: string,
   setCardTitle: React.Dispatch<SetStateAction<string>>,
 }
@@ -34,14 +34,20 @@ const CardInputField: React.FC<Props> = ({ list, listId, addCard, cardTitle, set
           <span className="flex-1 text-sm">Add a card</span>
         </div>
       ) : (
-        <>
-          <textarea ref={textareaRef} className="w-full bg-white p-2 rounded-md outline-none ring-2 ring-blue-500 hover:ring-0 placeholder:text-sm placeholder:text-gray-500 field-sizing-content min-h-14 max-h-40 shadow-md resize-none mb-1" placeholder="Enter a title" value={cardTitle} onChange={(e) => setCardTitle(e.target.value)}></textarea>
+        <form onSubmit={addCard}>
+          <textarea ref={textareaRef} className="w-full bg-white p-2 rounded-md outline-none ring-2 ring-blue-500 hover:ring-0 placeholder:text-sm placeholder:text-gray-500 field-sizing-content min-h-14 max-h-40 shadow-md resize-none mb-1" placeholder="Enter a title" value={cardTitle} onChange={(e) => setCardTitle(e.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                addCard();
+              }
+            }}></textarea>
           <div className="space-x-1 flex">
-            <Button size="sm" onClick={addCard} title="Add card" />
-            <button className="py-1.5 px-1.5 hover:bg-neutral-400/40 rounded-sm cursor-pointer text-gray-900"
-              onClick={closeCardInputField}><IoMdClose size={20} /></button>
+            <Button size="sm" type="submit" title="Add card" />
+            <button type="button" className="py-1.5 px-1.5 hover:bg-neutral-400/40 rounded-sm cursor-pointer text-gray-900" onClick={closeCardInputField}>
+              <IoMdClose size={20} /></button>
           </div>
-        </>
+        </form>
       )
       }
     </div >

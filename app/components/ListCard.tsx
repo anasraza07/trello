@@ -1,9 +1,8 @@
-import { BsThreeDots } from 'react-icons/bs'
 import { RiCollapseHorizontalLine } from 'react-icons/ri'
 import { List } from '../pages/Home'
-import { SetStateAction, useState } from 'react'
+import { FormEvent, SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
-import { Draggable, Droppable } from '@hello-pangea/dnd'
+import { Draggable, Droppable } from 'react-beautiful-dnd'
 import ItemCard from './ItemCard'
 import { AiOutlineDelete } from 'react-icons/ai'
 
@@ -12,7 +11,7 @@ interface Props {
   listId: number,
   setListId: React.Dispatch<SetStateAction<number>>,
   setCardTitle: React.Dispatch<SetStateAction<string>>
-  addCard: () => void,
+  addCard: (e?: FormEvent<HTMLFormElement>) => Promise<void>
   cardTitle: string,
   index: number,
   deleteList: (listId: number) => void,
@@ -29,9 +28,10 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
   return (
     <Draggable draggableId={`li-${list.id.toString()}`}
       index={index}>
-      {(provided, snapshot) => (
+      {(provided) => (
         <div ref={provided.innerRef} {...provided.draggableProps}
-          {...provided.dragHandleProps} className={`list-card rounded-[10px] bg-[#F1F2F4] mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
+          {...provided.dragHandleProps}
+          className={`list-card rounded-[10px] bg-[#F1F2F4] mr-4 ${!isCollapse && "min-w-68 max-w-68 py-2"}`}>
           {isCollapse ? (
             <div onClick={toggleCollapse} className='flex flex-col rounded-[10px] items-center hover:bg-[#DCDFE4] py-3 px-3 cursor-pointer'>
               <span className="cursor-pointer mb-3" ><RiCollapseHorizontalLine size={18} /></span>
@@ -39,7 +39,7 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
               <span className="text-gray-500 [writing-mode:vertical-lr] text-[15px]">{list.cards.length}</span>
             </div>
           ) : (
-            <div className={'space-y-2'}>
+            <div>
               <div className="top-bar flex justify-between py-2 px-5">
                 <span className="list-name text-sm font-semibold">
                   {list.name}</span>
@@ -54,9 +54,11 @@ const ListCard: React.FC<Props> = ({ list, listId, setListId, addCard, cardTitle
 
               {/* item cards */}
               <Droppable droppableId={`ul-${list.id.toString()}`}
-                direction='vertical' type='CHILD'>
+                direction='vertical' type='CHILD'
+                isDropDisabled={false}
+                isCombineEnabled={false} ignoreContainerClipping={false}>
                 {(provided) => (
-                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-100/30 scrollbar-thumb-gray-400 max-h-72 px-2"
+                  <ul className="cards min-h-0.5 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-track-gray-300/50 scrollbar-thumb-gray-400 max-h-72 px-2 pt-2 mb-1"
                     ref={provided.innerRef}
                     {...provided.droppableProps}>
                     {list.cards.map((item, index) => (

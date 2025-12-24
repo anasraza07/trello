@@ -1,14 +1,14 @@
 "use client"
-import { MouseEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import ListInputField from "../components/ListInputField";
 import ListCard from "../components/ListCard";
-import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, DragStart, DragUpdate, Droppable, DropResult } from "react-beautiful-dnd";
 import { supabase } from "../supabase-client";
 import { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import styled from "styled-components"
+import { isEmpty } from "lodash";
 
 export interface List {
   id: number,
@@ -36,10 +36,12 @@ const Home = ({ session }: { session: Session }) => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false);
 
-  const [dropIndex, setDropIndex] = useState<number | null>(null);  // const [cardId, setCardId] = useState(0);
-
   const modelRef = useRef(null);
   const globalCardInputRef = useRef<HTMLInputElement>(null)
+  const queryAttr = "data-rbd-drag-handle-draggable-id";
+  const [placeholderProps, setPlaceholderProps] = useState<Partial<{
+    clientX: number, clientHeight: number, clientWidth: number
+  }>>({});
 
   useEffect(() => {
     fetchData();
@@ -49,7 +51,10 @@ const Home = ({ session }: { session: Session }) => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "lists" },
-        () => {
+        (payload) => {
+          // if (payload.eventType == "DELETE") {
+          //   setLists(updatedList);
+          // }
           fetchData();
         }
       )
@@ -67,7 +72,6 @@ const Home = ({ session }: { session: Session }) => {
     };
   }, []);
 
-
   const fetchData = async () => {
     const { data, error } = await supabase
       .from('lists')
@@ -83,7 +87,8 @@ const Home = ({ session }: { session: Session }) => {
     setLists(data);
   }
 
-  const addList = async () => {
+  const addList = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const isListNameUnique = lists.map(list =>
       list.name.toLowerCase().replaceAll(" ", ""))
       .includes(listName.toLowerCase().replaceAll(" ", ""))
@@ -121,7 +126,8 @@ const Home = ({ session }: { session: Session }) => {
   const deleteList = async (listId: number) => {
     const updatedList = lists.filter(list => list.id != listId)
     updatedList.forEach((list, index) => list.index = index);
-    setLists(updatedList);
+
+    // setLists(updatedList);
 
     await supabase.from("lists")
       .delete()
@@ -172,7 +178,8 @@ const Home = ({ session }: { session: Session }) => {
     setGlobalCardTitle("");
   }
 
-  const addCard = async () => {
+  const addCard = async (e?: FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
     if (loading) return;
     if (!cardTitle.trim()) return;
 
@@ -211,6 +218,7 @@ const Home = ({ session }: { session: Session }) => {
   }
 
   async function onDragEnd(result: DropResult) {
+    setPlaceholderProps({});
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -314,9 +322,74 @@ const Home = ({ session }: { session: Session }) => {
         }
       }
     }
-
-    setDropIndex(null);
   }
+
+  const getDraggedDom = ((draggableId: string) => {
+    const domQuery = `[${queryAttr}='${draggableId}']`;
+    const draggedDOM = document.querySelector(domQuery);
+    console.log(draggedDOM);
+
+    return draggedDOM as HTMLElement | null;
+  });
+
+  const handleDragStart = (event: DragStart) => {
+    const draggedDOM = getDraggedDom(event.draggableId);
+    if (!draggedDOM) return;
+
+    const parent = draggedDOM.parentNode as HTMLElement;
+
+    const draggableItems = Array.from(parent.children).filter(
+      (child) => child.hasAttribute("data-rbd-draggable-id")
+    ) as HTMLElement[];
+
+    const sourceIndex = event.source.index;
+
+    const clientX =
+      parseFloat(window.getComputedStyle(parent).paddingLeft) +
+      draggableItems
+        .slice(0, sourceIndex)
+        .reduce((total, curr) => {
+          const style = window.getComputedStyle(curr);
+          return total + curr.offsetWidth + parseFloat(style.marginRight);
+        }, 0);
+
+    setPlaceholderProps({
+      clientHeight: draggedDOM.offsetHeight,
+      clientWidth: draggedDOM.offsetWidth,
+      clientX,
+    });
+  };
+
+  const handleDragUpdate = (event: DragUpdate) => {
+    if (!event.destination) return;
+
+    const draggedDOM = getDraggedDom(event.draggableId);
+    if (!draggedDOM) return;
+
+    const parent = draggedDOM.parentNode as HTMLElement;
+
+    // 🔥 ONLY draggable elements
+    const draggableItems = Array.from(parent.children).filter(
+      (child) => child.hasAttribute("data-rbd-draggable-id")
+    ) as HTMLElement[];
+
+    const destinationIndex = event.destination.index;
+
+    const clientX =
+      parseFloat(window.getComputedStyle(parent).paddingLeft) +
+      draggableItems
+        .slice(0, destinationIndex)
+        .reduce((total, curr) => {
+          const style = window.getComputedStyle(curr);
+          return total + curr.offsetWidth + parseFloat(style.marginRight);
+        }, 0);
+
+    setPlaceholderProps({
+      clientHeight: draggedDOM.offsetHeight,
+      clientWidth: draggedDOM.offsetWidth,
+      clientX,
+    });
+  };
 
   const handleIsDone = async (cardId: number, listId: number) => {
     const updatedLists = lists.map(list => {
@@ -349,11 +422,8 @@ const Home = ({ session }: { session: Session }) => {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}
-      onDragUpdate={(update) => {
-        if (update.destination) {
-          setDropIndex(update.destination.index);
-        }
-      }}>
+      onDragStart={handleDragStart}
+      onDragUpdate={handleDragUpdate}>
       <div>
         {/* global card input */}
         <div className="input-container bg-linear-to-r from-[#544797] to-[#7A4E93] mb-12 py-4">
@@ -374,11 +444,12 @@ const Home = ({ session }: { session: Session }) => {
         </div>
 
         {/* lists */}
-        <Droppable droppableId="LISTS" type="PARENT" direction="horizontal">
+        <Droppable droppableId="LISTS" type="PARENT" direction="horizontal" isDropDisabled={false}
+          isCombineEnabled={false} ignoreContainerClipping={false}>
           {(provided, snapshot) => (
             <div ref={provided.innerRef}
               {...provided.droppableProps}
-              className={`list-cards flex items-start min-h-[calc(100vh-168px)] overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4`}>
+              className={`relative lists flex items-start min-h-[calc(100vh-168px)] overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 pl-4`}>
 
               {/* list card */}
               {lists.map((list, index) =>
@@ -387,8 +458,16 @@ const Home = ({ session }: { session: Session }) => {
                   setCardTitle={setCardTitle} index={index}
                   deleteList={deleteList} handleIsDone={handleIsDone} />)}
               {provided.placeholder}
-              {snapshot.isDraggingOver && (
-                <div className="w-64 h-40 mx-2 rounded-lg border-2 border-dashed border-purple-400 bg-purple-200/40" />
+              {!isEmpty(placeholderProps) && snapshot.isDraggingOver && (
+                <div
+                  className="absolute bg-purple-100/30 rounded-[10px] pointer-events-none z-10"
+                  style={{
+                    top: 0,
+                    left: placeholderProps.clientX,
+                    height: placeholderProps.clientHeight,
+                    width: placeholderProps.clientWidth
+                  }}
+                />
               )}
             </div>
           )}
