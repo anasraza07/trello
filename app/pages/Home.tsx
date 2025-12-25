@@ -38,6 +38,7 @@ const Home = ({ session }: { session: Session }) => {
   const [selectedList, setSelectedList] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(false);
+  const [cardContent, setCardContent] = useState<Card | null>(null)
 
   const modelRef = useRef(null);
   const globalCardInputRef = useRef<HTMLInputElement>(null)
@@ -424,9 +425,32 @@ const Home = ({ session }: { session: Session }) => {
   }
 
   const handleCardDetails = ((cardItem: Card) => {
-    console.log(cardItem);
+    setCardContent(cardItem);
     setIsModalOpen(true);
   })
+
+  const saveCardDetails = () => {
+    if (!cardContent) return;
+    // console.log(cardContent.name);
+    const updatedList = lists.map(list => {
+      if (list.id != cardContent.list_id) {
+        return list
+      } else {
+        console.log(list.cards)
+        console.log(cardContent)
+        return {
+          ...list, cards: list.cards.map(card =>
+            card.id == cardContent.id
+              ? { ...card, name: cardContent.name }
+              : card
+          )
+        }
+      }
+    })
+    // console.log(updatedList);
+    // console.log(cardContent);
+    setLists(updatedList);
+  }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}
@@ -493,13 +517,13 @@ const Home = ({ session }: { session: Session }) => {
         }
 
         {isModalOpen &&
-          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm transition-all duration-300 flex justify-center items-center">
+          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-xs transition-all duration-300 flex justify-center items-center">
             {/* card content component */}
             <div className="card-content w-5xl bg-white rounded-xl">
               <div className="top-bar py-2 px-4 border-b border-gray-300">
-                <button className="hover:bg-neutral-400/20 rounded-sm place-self-end cursor-pointer block p-1.5" onClick={
-                  () => setIsModalOpen(false)
-                }>
+                <button className="hover:bg-neutral-400/20 rounded-sm place-self-end cursor-pointer block p-1.5"
+                  onClick={() => setIsModalOpen(false)
+                  }>
                   <IoMdClose size={20} />
                 </button>
               </div>
@@ -507,7 +531,10 @@ const Home = ({ session }: { session: Session }) => {
                 <div className="desc-section flex-[0.55] p-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <FaRegCircle size={18} />
-                    <input type="text" value={"FaReg Circle"} className="w-full px-2 py-1 text-xl font-semibold outline-blue-600" />
+                    <input type="text" value={cardContent?.name}
+                      onChange={e =>
+                        cardContent && setCardContent({ ...cardContent, name: e.target.value })}
+                      onBlur={saveCardDetails} className="w-full px-2 py-1 text-xl font-semibold outline-blue-600" />
                   </div>
                   <div className="card-description flex gap-4">
                     <GrTextAlignFull size={16} className="text-[#46474b] pt-0.5" />
