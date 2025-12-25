@@ -1,7 +1,6 @@
 import { Draggable } from "react-beautiful-dnd"
-import { Card } from "../pages/Home"
+import { Card } from "../pages/Home";
 import { FaCheckCircle, FaRegCircle } from "react-icons/fa"
-import { SetStateAction } from "react";
 
 interface Props {
 	item: Card,
