@@ -10,7 +10,7 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import { isEmpty } from "lodash";
 import { IoMdClose } from "react-icons/io";
-import { FaRegCircle } from "react-icons/fa";
+import { FaCheckCircle, FaRegCircle } from "react-icons/fa";
 import { GrTextAlignFull } from "react-icons/gr";
 
 export interface List {
@@ -395,7 +395,8 @@ const Home = ({ session }: { session: Session }) => {
     });
   };
 
-  const handleIsDone = async (cardId: number, listId: number) => {
+  const handleIsDone = async (e: MouseEvent, cardId: number, listId: number) => {
+    e.stopPropagation();
     const updatedLists = lists.map(list => {
       return list.id == listId ?
         {
@@ -429,9 +430,8 @@ const Home = ({ session }: { session: Session }) => {
     setIsModalOpen(true);
   })
 
-  const saveCardDetails = () => {
+  const saveCardDetails = async () => {
     if (!cardContent) return;
-    // console.log(cardContent.name);
     const updatedList = lists.map(list => {
       if (list.id != cardContent.list_id) {
         return list
@@ -441,15 +441,23 @@ const Home = ({ session }: { session: Session }) => {
         return {
           ...list, cards: list.cards.map(card =>
             card.id == cardContent.id
-              ? { ...card, name: cardContent.name }
+              ? {
+                ...card, name: cardContent.name,
+                is_done: !cardContent.is_done
+              }
               : card
           )
         }
       }
     })
-    // console.log(updatedList);
-    // console.log(cardContent);
     setLists(updatedList);
+
+    await supabase.from("cards")
+      .update({
+        "name": cardContent.name,
+        "is_done": cardContent.is_done
+      })
+      .eq("id", cardContent.id)
   }
 
   return (
@@ -516,10 +524,10 @@ const Home = ({ session }: { session: Session }) => {
           </div>
         }
 
-        {isModalOpen &&
-          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-xs transition-all duration-300 flex justify-center items-center">
+        {/* {isModalOpen &&
+          <div ref={modelRef} onClick={(e) => closeModal(e)} className="modal fixed inset-0 w-full h-full bg-black/40 backdrop-blur-xs transition-all duration-300 flex justify-center items-center"> */}
             {/* card content component */}
-            <div className="card-content w-5xl bg-white rounded-xl">
+            {/* <div className="card-content w-5xl bg-white rounded-xl">
               <div className="top-bar py-2 px-4 border-b border-gray-300">
                 <button className="hover:bg-neutral-400/20 rounded-sm place-self-end cursor-pointer block p-1.5"
                   onClick={() => setIsModalOpen(false)
@@ -530,7 +538,10 @@ const Home = ({ session }: { session: Session }) => {
               <div className="main-content flex">
                 <div className="desc-section flex-[0.55] p-4 space-y-4">
                   <div className="flex items-center gap-2">
-                    <FaRegCircle size={18} />
+                    {cardContent?.is_done
+                      ? <FaCheckCircle size={16} color="green" className="cursor-pointer"
+                        onClick={saveCardDetails} />
+                      : <FaRegCircle size={18} className="cursor-pointer" onClick={saveCardDetails} />}
                     <input type="text" value={cardContent?.name}
                       onChange={e =>
                         cardContent && setCardContent({ ...cardContent, name: e.target.value })}
@@ -549,11 +560,11 @@ const Home = ({ session }: { session: Session }) => {
 
                   </div>
                 </div>
-                {/* <div className="comments-section flex-[0.45] bg-[#f8f8f8] p-4 border-l border-gray-300"></div> */}
+                <div className="comments-section flex-[0.45] bg-[#f8f8f8] p-4 border-l border-gray-300"></div>
               </div>
             </div>
           </div>
-        }
+        } */}
       </div>
     </DragDropContext >
   )

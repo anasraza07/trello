@@ -1,6 +1,6 @@
 import { RiCollapseHorizontalLine } from 'react-icons/ri'
 import { Card, List } from '../pages/Home'
-import { FormEvent, SetStateAction, useState } from 'react'
+import { FormEvent, MouseEvent, SetStateAction, useState } from 'react'
 import CardInputField from './CardInputField'
 import { Draggable, Droppable } from 'react-beautiful-dnd'
 import ItemCard from './ItemCard'
@@ -15,7 +15,7 @@ interface Props {
   cardTitle: string,
   index: number,
   deleteList: (listId: number) => void,
-  handleIsDone: (cardId: number, listId: number) => void;
+  handleIsDone: (e: MouseEvent<SVGElement>, cardId: number, listId: number) => void;
   handleCardDetails: (item: Card) => void;
 }
 
